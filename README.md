@@ -29,6 +29,22 @@ Aprovecha el **GitHub Engine** para compilar, alojar y distribuir sitios web, Si
 
 ---
 
+## 🔒 Visibilidad de Repositorios (Públicos por Defecto & Ajuste Privado)
+
+> [!IMPORTANT]
+> **Privacidad por defecto**: Todos los repositorios que se crean automáticamente al desplegar una nueva **Cocoon** o crear una **Morph Function** se inicializan como **Repositorios Públicos** por defecto para garantizar compatibilidad directa con GitHub Pages a **coste $0**.
+
+### 🛡️ ¿Cómo cambiar la visibilidad de tu repositorio a Privado?
+Si deseas que el código fuente de tu Cocoon o Morph sea **Privado**, puedes cambiar la visibilidad en **1 clic** en cualquier momento:
+
+1. Ve a tu cuenta de GitHub y abre el repositorio creado (ej. `tu-usuario/mi-cocoon-app` o `tu-usuario/mi-morph-fn`).
+2. Entra en la pestaña **Settings** (Configuración del repositorio).
+3. Desplázate hasta el final a la sección **Danger Zone** (Zona de peligro).
+4. En **Change repository visibility** (Cambiar visibilidad), haz clic en **Change visibility** y selecciona **Make private**.
+5. Confirma la acción escribiendo el nombre de tu repositorio.
+
+---
+
 ## 🏛️ Los 3 Pilares de WEBBL
 
 WEBBL está diseñado en torno a 3 conceptos fundamentales:
