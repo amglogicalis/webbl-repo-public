@@ -156,19 +156,29 @@ npx webbl open
 
 ## 🎛️ Consola Web (UI Dashboard)
 
-WEBBL incluye una interfaz web nativa basada en la estética **Dark Banana Glass** para gestionar todos tus despliegues visualmente.
+Accede a la Consola Web desplegada 24/7 desde cualquier navegador o dispositivo móvil:
 
-Para iniciar la consola en local:
+👉 **[https://amglogicalis.github.io/webbl-repo-public/](https://amglogicalis.github.io/webbl-repo-public/)**
+
+<div align="center" style="margin: 1.5rem 0;">
+  <img src="assets/webbl_console_preview.PNG" alt="WEBBL Web Console Interface Preview" width="100%" style="border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+</div>
+
+WEBBL incluye una interfaz web nativa basada en la estética **Dark Glassmorphism** para gestionar todos tus despliegues visualmente sin depender de la terminal.
+
+También puedes iniciar la consola localmente en tu equipo:
 ```bash
 npx webbl console
 ```
 
 Abre automáticamente `http://localhost:3721` con un dashboard moderno:
-- **Deploy & Redeploy**: Arrastra o selecciona archivos estáticos (`.html`, `.css`, `.js`, etc.) con pre-visualización y **botón `X` de descarte individual de archivos**.
+- **🐛 Cocoons Directory**: Visualización y gestión de todas tus aplicaciones web desplegadas.
+- **🦋 Morphs Directory**: Creación, listado y ejecución en tiempo real de funciones Serverless (**Async**, **Build** y **Hatch** Morphs).
+- **Deploy & Redeploy**: Arrastra o selecciona archivos estáticos (`.html`, `.css`, `.js`, etc.) con pre-visualización y descarte de archivos.
 - **Version Tags Personalizadas**: Elige la etiqueta de versión (ej. `v1.0.0`, `v2-beta`) o deja que se autogenere.
-- **Historial e Indicador Activo Real (`Active`)**: Identifica con precisión la versión que está en vivo en ese instante comparando el commit SHA del HEAD de la rama `gh-pages`.
-- **Renombrado y Borrado de Versiones Modal**: Cambia etiquetas o elimina Releases del historial mediante modales Dark Banana Glass sin necesidad de refrescar páginas.
-- **Rollbacks con Estado de Progreso en Vivo**: El botón de confirmación permanece bloqueado en estado de carga (*Building GitHub Pages...*) hasta que GitHub confirme que la compilación terminó.
+- **Historial e Indicador Activo Real (`Active`)**: Identifica con precisión la versión que está en vivo en ese instante comparando el commit SHA.
+- **Renombrado y Borrado de Versiones Modal**: Cambia etiquetas o elimina Releases del historial mediante modales Dark Glass.
+- **Rollbacks con Estado de Progreso en Vivo**: Confirmaciones en tiempo real de compilaciones.
 - **Eliminación Permanente de Repositorios**: Borra repositorios completos directamente desde la web con confirmación de seguridad.
 
 ---
