@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBBL Console | Terra</title>
+    <link rel="icon" type="image/png" href="assets/logo_webbl.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="toast-container"></div>
+    
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="assets/logo_webbl.png" alt="WEBBL Logo" class="logo-img" />
+                <span class="logo-text">WEBBL</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <div class="nav-section">MAIN</div>
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i class="fa-solid fa-gauge"></i> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-view="cocoons">
+                    <i class="fa-solid fa-cubes"></i> Cocoons
+                </a>
+                <a href="#" class="nav-item" data-view="morphs">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Morphs
+                </a>
+                
+                <div class="nav-section mt-4">SETTINGS</div>
+                <a href="#" class="nav-item" data-view="settings">
+                    <i class="fa-solid fa-gear"></i> Settings
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile" id="user-profile">
+                    <div class="avatar-placeholder"><i class="fa-regular fa-user"></i></div>
+                    <div class="user-info">
+                        <span class="user-name">Not connected</span>
+                        <span class="user-status text-muted">Guest</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="search-bar">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" placeholder="Search Cocoons (Ctrl+K)..." id="search-input">
+                </div>
+                
+                <div class="auth-section">
+                    <div class="token-input-group" id="token-group">
+                        <i class="fa-brands fa-github"></i>
+                        <input type="password" id="gh-token" placeholder="GitHub PAT">
+                        <button id="btn-connect" class="btn btn-primary">Connect</button>
+                    </div>
+                    <button id="btn-disconnect" class="btn btn-danger hidden">
+                        <i class="fa-solid fa-plug-circle-xmark"></i> Disconnect
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div class="view-content" id="view-dashboard">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Overview</h1>
+                        <p class="text-muted">Manage your WEBBL Cocoons and deployments.</p>
+                    </div>
+                    <button class="btn btn-secondary" id="btn-refresh">
+                        <i class="fa-solid fa-rotate-right"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card glass">
+                        <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Cocoons</span>
+                            <span class="stat-value" id="stat-total">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass">
+                        <div class="stat-icon accent"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Last Deploy</span>
+                            <span class="stat-value" id="stat-last-deploy">Never</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass">
+                        <div class="stat-icon purple"><i class="fa-solid fa-hard-drive"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Size</span>
+                            <span class="stat-value" id="stat-size">0 MB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cocoons Section -->
+                <div class="section-header">
+                    <h2>Active Cocoons</h2>
+                    <span class="badge badge-primary">Build Intelligence by Chrysalis</span>
+                </div>
+                
+                <div id="cocoons-container" class="cocoons-grid">
+                    <!-- Loading State -->
+                    <div class="empty-state glass">
+                        <i class="fa-brands fa-github empty-icon"></i>
+                        <h3>Connect GitHub</h3>
+                        <p class="text-muted">Enter your GitHub Personal Access Token to load your WEBBL Cocoons.</p>
+                        <p class="text-small text-muted mt-2">Requires repo scope to read deployments and releases.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cocoons Dedicated View -->
+            <div class="view-content hidden" id="view-cocoons">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Cocoons Directory</h1>
+                        <p class="text-muted">All active static sites deployed with WEBBL across your GitHub account.</p>
+                    </div>
+                    <button class="btn btn-primary btn-open-new-cocoon-2">
+                        <i class="fa-solid fa-plus"></i> Deploy Cocoon
+                    </button>
+                </div>
+                <div id="cocoons-list-container" class="cocoons-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Morphs View -->
+            <div class="view-content hidden" id="view-morphs">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">WEBBL Morphs</h1>
+                        <p class="text-muted">Serverless Functions running on GitHub Actions runners ($0 Cost).</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-open-new-morph">
+                        <i class="fa-solid fa-plus"></i> Create Morph
+                    </button>
+                </div>
+
+                <div id="morphs-loader" class="loader-container hidden">
+                    <div class="spinner"></div>
+                    <p>Loading Morphs...</p>
+                </div>
+
+                <div id="morphs-grid" class="cocoons-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div class="view-content hidden" id="view-settings">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Settings & Credentials</h1>
+                        <p class="text-muted">Manage your GitHub integration and WEBBL engine preferences.</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- GitHub PAT Card -->
+                    <div class="settings-card glass">
+                        <div class="settings-card-header">
+                            <div class="settings-icon">
+                                <i class="fa-brands fa-github"></i>
+                            </div>
+                            <div>
+                                <h3>GitHub Authentication</h3>
+                                <p class="text-muted text-small">Configure your Personal Access Token to connect WEBBL with your GitHub repositories.</p>
+                            </div>
+                        </div>
+
+                        <div class="settings-card-body">
+                            <div class="form-group">
+                                <label for="settings-token">Personal Access Token (PAT)</label>
+                                <div class="token-input-wrapper">
+                                    <i class="fa-solid fa-key input-icon"></i>
+                                    <input type="password" id="settings-token" class="input-field" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                                    <button type="button" class="btn-toggle-pass" id="btn-toggle-token" title="Toggle visibility">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="scopes-info">
+                                <span class="scopes-label">Required Scopes:</span>
+                                <span class="badge badge-scope">repo</span>
+                                <span class="badge badge-scope">workflow</span>
+                                <span class="badge badge-scope">read:user</span>
+                            </div>
+
+                            <div class="settings-actions">
+                                <button id="btn-save-settings" class="btn btn-primary btn-lg">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save & Connect
+                                </button>
+                                <button id="btn-clear-settings" class="btn btn-danger-outline btn-lg">
+                                    <i class="fa-solid fa-trash-can"></i> Disconnect & Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Environment & System Status Card -->
+                    <div class="settings-card glass">
+                        <div class="settings-card-header">
+                            <div class="settings-icon accent">
+                                <i class="fa-solid fa-server"></i>
+                            </div>
+                            <div>
+                                <h3>System Info & Engine</h3>
+                                <p class="text-muted text-small">WEBBL Ecosystem Status & Local Server Details</p>
+                            </div>
+                        </div>
+
+                        <div class="settings-card-body">
+                            <div class="info-list">
+                                <div class="info-item">
+                                    <span class="info-label">Ecosystem Engine</span>
+                                    <span class="info-value text-accent">Terra GitHub Engine ($0 Cost)</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Build Intelligence</span>
+                                    <span class="info-value">Chrysalis v1.0 (14+ Frameworks)</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">CLI Server</span>
+                                    <span class="info-value">http://localhost:3721</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Storage Protocol</span>
+                                    <span class="info-value">GitHub Releases / Tree API</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="app-footer">
+                <p>Powered by Terra Ecosystem • WEBBL v1.0.0 • $0 hosting</p>
+                <div class="footer-links">
+                    <a href="https://github.com/amglogicalis/webbl-repo-public" target="_blank">Docs</a>
+                    <a href="https://github.com/amglogicalis/Terra" target="_blank">Terra Ecosystem</a>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal-backdrop hidden" id="modal-history">
+        <div class="modal glass">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Deployment History</h3>
+                    <p class="text-muted text-small" id="history-cocoon-name">repo-name</p>
+                </div>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="history-loader" class="loader-container">
+                    <div class="spinner"></div>
+                    <p>Loading history...</p>
+                </div>
+                <div class="table-container hidden" id="history-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Version Tag</th>
+                                <th>Date</th>
+                                <th>Size</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rollback Confirmation Modal -->
+    <div class="modal-backdrop hidden" id="modal-rollback">
+        <div class="modal glass modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Rollback</h3>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to rollback <strong><span id="rollback-repo"></span></strong> to version <strong class="text-accent" id="rollback-tag"></strong>?</p>
+                <div class="alert alert-warning mt-4">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>This will trigger Chrysalis to rebuild the selected release. Your current site will be overwritten.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-danger" id="btn-confirm-rollback">
+                    <i class="fa-solid fa-rotate-left"></i> Rollback
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Release Modal -->
+    <div class="modal-backdrop hidden" id="modal-rename-release">
+        <div class="modal glass modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-pen text-primary"></i> Rename Version Tag</h3>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted text-small mb-3">Enter a new Version Tag for release <strong id="rename-old-tag" class="text-primary"></strong>:</p>
+                <div class="form-group">
+                    <input type="text" id="rename-new-tag-input" class="input-field" placeholder="e.g. v1.0.0 or release-prod">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-primary" id="btn-confirm-rename-release">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Tag
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Release Modal -->
+    <div class="modal-backdrop hidden" id="modal-delete-release">
+        <div class="modal glass modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title text-danger"><i class="fa-solid fa-trash-can"></i> Delete Release Version</h3>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Are you sure you want to delete version <strong id="delete-release-tag" class="text-danger"></strong> from history?</p>
+                <div class="alert alert-warning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>This will permanently remove this version entry from GitHub Releases.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-danger" id="btn-confirm-delete-release">
+                    <i class="fa-solid fa-trash-can"></i> Delete Version
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Morph Modal -->
+    <div class="modal-backdrop hidden" id="modal-new-morph">
+        <div class="modal glass modal-md">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-wand-magic-sparkles text-primary"></i> Create WEBBL Morph</h3>
+                    <p class="text-muted text-small">Create a serverless function repository on GitHub</p>
+                </div>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label for="new-morph-name">Morph Name</label>
+                    <input type="text" id="new-morph-name" class="input-field" placeholder="e.g. form-handler or api-webhook">
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="new-morph-category">Morph Type</label>
+                    <select id="new-morph-category" class="input-field">
+                        <option value="async" selected>⚡ Async Morph (Form handling, webhooks ~30s)</option>
+                        <option value="build">🏗️ Build Morph (Pre-build data injection 0ms)</option>
+                        <option value="hatch">🐣 Hatch Morph (Live Node.js worker runner)</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="new-morph-desc">Description</label>
+                    <input type="text" id="new-morph-desc" class="input-field" placeholder="Brief description of this function">
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>Function Script (index.js)</label>
+                    <div class="flex gap-2 mb-2">
+                        <input type="file" id="new-morph-file-input" accept=".js,.mjs,.cjs" class="hidden">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btn-browse-morph-file">
+                            <i class="fa-solid fa-file-code"></i> Upload Custom .js File
+                        </button>
+                        <span id="morph-file-selected-name" class="text-muted text-small flex align-center">Default Template</span>
+                    </div>
+                    <textarea id="new-morph-code-editor" class="input-field" rows="6" style="font-family: monospace; font-size: 12px; color: #facc15;" placeholder="// Write or paste your Node.js handler script here...
+module.exports = async function handler(payload) {
+  // Your serverless function logic here
+  return { status: 200, data: payload };
+};"></textarea>
+                </div>
+
+                <div id="morph-create-progress" class="loader-container hidden mt-4">
+                    <div class="spinner"></div>
+                    <p id="morph-create-progress-text">Creating Morph on GitHub...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-primary" id="btn-execute-create-morph">
+                    <i class="fa-solid fa-plus"></i> Create Morph Repository
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Morph Modal -->
+    <div class="modal-backdrop hidden" id="modal-rename-morph">
+        <div class="modal glass modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-pen text-primary"></i> Rename Morph Repository</h3>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted text-small mb-3">Enter new name for Morph <strong id="rename-morph-old-name" class="text-primary"></strong>:</p>
+                <div class="form-group">
+                    <input type="text" id="rename-morph-new-name-input" class="input-field" placeholder="e.g. v5-contact-form">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-primary" id="btn-confirm-rename-morph">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Name
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Morph Modal -->
+    <div class="modal-backdrop hidden" id="modal-delete-morph">
+        <div class="modal glass modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title text-danger"><i class="fa-solid fa-trash-can"></i> Delete Morph Repository</h3>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Are you sure you want to permanently delete Morph repository <strong id="delete-morph-target-name" class="text-danger"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>This will permanently remove the repository, code, and workflow history from GitHub.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-danger" id="btn-confirm-delete-morph">
+                    <i class="fa-solid fa-trash-can"></i> Delete Morph Repository
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Run Morph Modal -->
+    <div class="modal-backdrop hidden" id="modal-run-morph">
+        <div class="modal glass modal-md">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-play text-accent"></i> Run Morph</h3>
+                    <p class="text-muted text-small" id="run-morph-target">owner/morph-name</p>
+                </div>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label for="run-morph-payload">JSON Input Payload</label>
+                    <textarea id="run-morph-payload" class="input-field" rows="4" style="font-family: monospace;">{
+  "event": "user_signup",
+  "email": "user@example.com"
+}</textarea>
+                </div>
+
+                <div id="morph-run-progress" class="loader-container hidden mt-4">
+                    <div class="spinner"></div>
+                    <p id="morph-run-progress-text">Dispatching trigger to GitHub Actions...</p>
+                </div>
+
+                <div id="morph-run-result-box" class="hidden mt-4">
+                    <label class="text-small text-muted mb-2 block">Execution Result:</label>
+                    <pre id="morph-run-result-json" class="glass p-3" style="font-size: 12px; color: #10b981; overflow-x: auto; max-height: 200px;"></pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Close</button>
+                <button class="btn btn-primary" id="btn-execute-run-morph">
+                    <i class="fa-solid fa-play"></i> Dispatch Execution
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Cocoon Modal -->
+    <div class="modal-backdrop hidden" id="modal-new-cocoon">
+        <div class="modal glass">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Deploy New Cocoon</h3>
+                    <p class="text-muted text-small">Upload static HTML/CSS/JS files directly to GitHub Pages</p>
+                </div>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="deploy-form-fields">
+                    <div class="form-group mb-4">
+                        <label for="new-cocoon-repo">GitHub Repository (owner/repo)</label>
+                        <input type="text" id="new-cocoon-repo" class="input-field" placeholder="e.g. username/my-portfolio">
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label for="new-cocoon-tag">Version Tag (Optional)</label>
+                        <input type="text" id="new-cocoon-tag" class="input-field" placeholder="e.g. v1.0.0 or release-prod (Default: auto-generated)">
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label for="new-cocoon-msg">Deploy Message</label>
+                        <input type="text" id="new-cocoon-msg" class="input-field" placeholder="Initial WEBBL deployment via Web Console">
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label>Upload HTML / Build Files</label>
+                        <div class="file-drop-zone glass" id="drop-zone">
+                            <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                            <p class="drop-text">Click or drag files here to deploy</p>
+                            <span class="text-muted text-small">Supported: .html, .css, .js, .png, .jpg, .json</span>
+                            <input type="file" id="file-input" multiple style="display:none;">
+                        </div>
+                        <div id="file-list-preview" class="file-preview-list mt-2"></div>
+                    </div>
+                </div>
+
+                <!-- Prominent Live Deploy Stepper Overlay -->
+                <div id="deploy-progress" class="deploy-stepper-box hidden">
+                    <div class="spinner-large"></div>
+                    <h3 id="deploy-step-title" class="mt-3 text-primary">Deploying Cocoon...</h3>
+                    <p id="deploy-progress-text" class="text-muted text-small mt-1">Initializing GitHub pipeline...</p>
+                    <div class="deploy-status-badge mt-3" id="deploy-status-badge">
+                        <i class="fa-solid fa-spinner fa-spin"></i> GitHub Pages Action Running
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="deploy-modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-primary btn-lg" id="btn-execute-deploy">
+                    <i class="fa-solid fa-rocket"></i> Deploy Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Cocoon Modal -->
+    <div class="modal-backdrop hidden" id="modal-delete-cocoon">
+        <div class="modal glass modal-md">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title text-danger"><i class="fa-solid fa-trash-can"></i> Delete Cocoon</h3>
+                    <p class="text-muted text-small" id="delete-cocoon-target">owner/repo</p>
+                </div>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning mb-4">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Permanent Action:</strong> This will permanently delete the GitHub repository <strong id="delete-repo-name">repo</strong> including all site files, commits, releases, and deployment history from GitHub.
+                    </div>
+                </div>
+                <p class="text-muted text-small mb-3">Are you sure you want to proceed? This action cannot be undone.</p>
+
+                <div id="delete-progress" class="loader-container hidden mt-4">
+                    <div class="spinner"></div>
+                    <p id="delete-progress-text">Deleting Repository...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-danger" id="btn-confirm-delete-cocoon">
+                    <i class="fa-solid fa-trash-can"></i> Confirm Deletion
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
