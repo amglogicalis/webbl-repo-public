@@ -99,33 +99,86 @@ npx webbl detect
 npx webbl ls
 ```
 
-#### 5. Historial de Despliegues y Rollback
+#### 5. Historial de Despliegues, Rollback y Gestión de Versiones
 Ver historial de versiones:
 ```bash
 npx webbl history usuario/mi-proyecto
 ```
-Restaurar una versión previa:
+
+Restaurar una versión previa (ejecuta un Rollback inmutable re-apuntando la rama `gh-pages` y creando una release de respaldo `v1.0.0-rb-1`):
 ```bash
 npx webbl rollback usuario/mi-proyecto webbl-v1722288000000
 ```
 
-#### 6. Abrir en Navegador
+Renombrar la etiqueta de una versión en el historial:
+```bash
+npx webbl release rename usuario/mi-proyecto v1.0.0 v1.0.0-prod
+```
+
+Eliminar una versión específica del historial:
+```bash
+npx webbl release delete usuario/mi-proyecto v1.0.0
+```
+
+#### 6. Eliminar un Cocoon o Repositorio
+Eliminar el despliegue web (`gh-pages`):
+```bash
+npx webbl delete usuario/mi-proyecto
+```
+
+Eliminar el repositorio completo de GitHub permanentemente:
+```bash
+npx webbl delete usuario/mi-proyecto --repo
+```
+
+#### 7. Abrir en Navegador
 ```bash
 npx webbl open
 ```
 
 ---
 
-## 🎛️ Consola Web
+## 🎛️ Consola Web (UI Dashboard)
 
-WEBBL incluye una interfaz web nativa para gestionar todos tus despliegues visualmente.
+WEBBL incluye una interfaz web nativa basada en la estética **Dark Banana Glass** para gestionar todos tus despliegues visualmente.
 
 Para iniciar la consola en local:
 ```bash
 npx webbl console
 ```
 
-Abre automáticamente `http://localhost:3721` con un dashboard moderno (Glassmorphism, Modo Oscuro, métricas de despliegues y control de historial).
+Abre automáticamente `http://localhost:3721` con un dashboard moderno:
+- **Deploy & Redeploy**: Arrastra o selecciona archivos estáticos (`.html`, `.css`, `.js`, etc.) con pre-visualización y **botón `X` de descarte individual de archivos**.
+- **Version Tags Personalizadas**: Elige la etiqueta de versión (ej. `v1.0.0`, `v2-beta`) o deja que se autogenere.
+- **Historial e Indicador Activo Real (`Active`)**: Identifica con precisión la versión que está en vivo en ese instante comparando el commit SHA del HEAD de la rama `gh-pages`.
+- **Renombrado y Borrado de Versiones Modal**: Cambia etiquetas o elimina Releases del historial mediante modales Dark Banana Glass sin necesidad de refrescar páginas.
+- **Rollbacks con Estado de Progreso en Vivo**: El botón de confirmación permanece bloqueado en estado de carga (*Building GitHub Pages...*) hasta que GitHub confirme que la compilación terminó.
+- **Eliminación Permanente de Repositorios**: Borra repositorios completos directamente desde la web con confirmación de seguridad.
+
+---
+
+## ❓ Troubleshooting & Preguntas Frecuentes (FAQ)
+
+### ⚠️ 1. El estado en la Consola Web aparece como "Live" (🟢) o "Building" (🟡) pero los cambios aún no se ven en la web pública. ¿Qué ocurre?
+
+**Explicación**:
+El indicador visual en la Consola Web consulta el estado reportado por la API de GitHub Pages (`GET /repos/{owner}/{repo}/pages`). Sin embargo, en ocasiones (aproximadamente 1 de cada 7 despliegues), los servidores de GitHub tardan unos segundos adicionales en sincronizar el estado global o propagar la caché de la CDN.
+
+**Recomendación**:
+Ten paciencia. El indicador de la Consola Web es una **guía visual orientativa**. 
+El **verdadero progreso en tiempo real y la fuente absoluta de verdad** es hacer clic en el botón **`Repo`** (o ingresar a tu repositorio en GitHub) y revisar la pestaña **Actions** sobre la rama `gh-pages`. Allí verás la ejecución exacta paso a paso del runner de GitHub.
+
+### ❓ 2. El comando `deploy` o la Consola Web me devuelve `404 Not Found` o `Branch gh-pages not found`.
+
+- Asegúrate de que tu GitHub Personal Access Token (PAT) tenga los permisos (scopes) mínimos necesarios:
+  - `repo` (Full control of private and public repositories)
+  - `workflow` (Update GitHub Action workflows)
+  - `delete_repo` (Si deseas eliminar repositorios enteros)
+- WEBBL crea automáticamente la rama `gh-pages` y configura el motor estático en `build_type: "legacy"`. Si el repositorio es nuevo, espera 2 o 3 segundos para que la API de GitHub termine de registrar el commit inicial.
+
+### ❓ 3. ¿Por qué al hacer Rollback se crea una Release con el nombre `v1.0.0-rb-1`?
+
+Al hacer un Rollback a una versión antigua (ejemplo `v1.0.0`), WEBBL crea una nueva Release de respaldo etiquetada como `v1.0.0-rb-1` para dejar un **registro inmutable de auditoría**. Esto garantiza que nunca pierdas el historial de despliegues y puedas auditar en qué momento exacto se realizó cada restauración.
 
 ---
 
@@ -145,6 +198,12 @@ const result = await webbl.deploy({
   repo: 'mi-usuario/mi-sitio',
   message: 'Deploy programático'
 });
+
+// Rollback a una versión previa
+await webbl.rollback('mi-usuario/mi-sitio', 'v1.0.0');
+
+// Renombrar una release
+await webbl.renameRelease('mi-usuario/mi-sitio', 'webbl-v1785370361934', 'v1.0.0');
 
 console.log(`Sitio en vivo en: ${result.url}`);
 ```
