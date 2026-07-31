@@ -185,6 +185,9 @@ class WebblConsole {
         const btnConfirmRenameMorph = document.getElementById('btn-confirm-rename-morph');
         if (btnConfirmRenameMorph) btnConfirmRenameMorph.addEventListener('click', () => this.executeRenameMorph());
 
+        const btnConfirmRenameCocoon = document.getElementById('btn-confirm-rename-cocoon');
+        if (btnConfirmRenameCocoon) btnConfirmRenameCocoon.addEventListener('click', () => this.executeRenameCocoon());
+
         const btnConfirmDeleteMorph = document.getElementById('btn-confirm-delete-morph');
         if (btnConfirmDeleteMorph) btnConfirmDeleteMorph.addEventListener('click', () => this.executeDeleteMorph());
 
@@ -397,8 +400,11 @@ class WebblConsole {
 
                 const cardHTML = `
                     <div class="cocoon-header">
-                        <div class="cocoon-title">
+                        <div class="cocoon-title flex align-center gap-2">
                             <h3><i class="fa-brands fa-github text-muted mr-1"></i> ${repo.name}</h3>
+                            <button class="btn-icon btn-rename-cocoon text-muted hover-text-primary ml-1" data-repo="${repo.full_name}" data-name="${repo.name}" title="Rename Cocoon Repository" style="background:none; border:none; cursor:pointer; font-size:12px;">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
                         </div>
                         ${statusBadgeHTML}
                     </div>
@@ -471,6 +477,15 @@ class WebblConsole {
                     const fullRepo = e.currentTarget.dataset.repo;
                     const repoName = e.currentTarget.dataset.reponame;
                     this.confirmDeleteCocoon(fullRepo, repoName);
+                });
+            });
+
+            // Re-attach rename cocoon event listeners
+            document.querySelectorAll('.btn-rename-cocoon').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const fullRepo = e.currentTarget.dataset.repo;
+                    const repoName = e.currentTarget.dataset.name;
+                    this.openRenameCocoonModal(fullRepo, repoName);
                 });
             });
 
@@ -638,6 +653,59 @@ class WebblConsole {
             this.showToast('Rename Failed', e.message, 'error');
         } finally {
             btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Tag';
+            btnSave.disabled = false;
+        }
+    }
+
+    openRenameCocoonModal(fullRepoName, oldName) {
+        this.renameCocoonFullRepo = fullRepoName;
+        this.renameCocoonOldName = oldName;
+
+        const label = document.getElementById('rename-cocoon-old-name');
+        if (label) label.textContent = oldName;
+
+        const input = document.getElementById('rename-cocoon-new-name-input');
+        if (input) input.value = oldName;
+
+        const modal = document.getElementById('modal-rename-cocoon');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    async executeRenameCocoon() {
+        const input = document.getElementById('rename-cocoon-new-name-input');
+        const newName = input ? input.value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-') : '';
+
+        if (!newName || newName === this.renameCocoonOldName) {
+            this.closeAllModals();
+            return;
+        }
+
+        const [owner, oldName] = this.renameCocoonFullRepo.split('/');
+        const btnSave = document.getElementById('btn-confirm-rename-cocoon');
+
+        try {
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Renaming...';
+            btnSave.disabled = true;
+
+            const res = await fetch(`https://api.github.com/repos/${owner}/${oldName}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.message || 'Failed to rename repository');
+            }
+
+            this.closeAllModals();
+            this.showToast('Cocoon Renamed', `Renamed ${oldName} to ${newName} successfully.`, 'success');
+            this.loadCocoons();
+
+        } catch(e) {
+            this.showToast('Rename Failed', e.message, 'error');
+        } finally {
+            btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Name';
             btnSave.disabled = false;
         }
     }

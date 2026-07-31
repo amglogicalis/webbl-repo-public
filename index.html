@@ -320,6 +320,28 @@
         </div>
     </div>
 
+    <!-- Rename Cocoon Modal -->
+    <div class="modal-backdrop hidden" id="modal-rename-cocoon">
+        <div class="modal glass modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-pen text-primary"></i> Rename Cocoon Repository</h3>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted text-small mb-3">Enter new name for Cocoon <strong id="rename-cocoon-old-name" class="text-primary"></strong>:</p>
+                <div class="form-group">
+                    <input type="text" id="rename-cocoon-new-name-input" class="input-field" placeholder="e.g. my-new-portfolio">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-primary" id="btn-confirm-rename-cocoon">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Name
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Rename Release Modal -->
     <div class="modal-backdrop hidden" id="modal-rename-release">
         <div class="modal glass modal-sm">
