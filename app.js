@@ -403,9 +403,9 @@ class WebblConsole {
 
                 const cardHTML = `
                     <div class="cocoon-header">
-                        <div class="cocoon-title flex align-center gap-2">
-                            <h3><i class="fa-brands fa-github text-muted mr-1"></i> ${repo.name}</h3>
-                            <button class="btn-icon btn-rename-cocoon text-muted hover-text-primary ml-1" data-repo="${repo.full_name}" data-name="${repo.name}" title="Rename Cocoon Repository" style="background:none; border:none; cursor:pointer; font-size:12px;">
+                        <div class="cocoon-title" style="display: flex; align-items: center; gap: 8px;">
+                            <h3 style="margin:0; font-size:1.1rem; display:inline-flex; align-items:center; gap:6px;"><i class="fa-brands fa-github text-muted"></i> ${repo.name}</h3>
+                            <button class="btn-icon btn-rename-cocoon text-muted hover-text-primary" data-repo="${repo.full_name}" data-name="${repo.name}" title="Rename Cocoon Repository" style="background:none; border:none; cursor:pointer; font-size:12px; padding:2px;">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
                         </div>
