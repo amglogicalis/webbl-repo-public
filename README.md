@@ -81,11 +81,12 @@ WEBBL
 
 ## 🛠️ Instalación y Uso de CLI
 
-### Instalación / Ejecución con `npx`
-No requiere instalación global. Puedes ejecutar WEBBL directamente:
+### Instalación Global o Ejecución con `npx`
 
 ```bash
-npx webbl <comando>
+npm install -g terra-webbl
+# o directamente:
+npx terra-webbl <comando>
 ```
 
 ### 🚀 Comandos Principales
@@ -115,7 +116,17 @@ npx webbl detect
 npx webbl ls
 ```
 
-#### 5. Historial de Despliegues, Rollback y Gestión de Versiones
+#### 5. Renombrar un Cocoon o Morph
+Renombrar el repositorio de una Cocoon en GitHub:
+```bash
+npx webbl rename usuario/viejo-nombre nuevo-nombre
+```
+Renombrar el repositorio de un Morph Serverless en GitHub:
+```bash
+npx webbl morph rename usuario/viejo-morph nuevo-morph
+```
+
+#### 6. Historial de Despliegues, Rollback y Gestión de Versiones
 Ver historial de versiones:
 ```bash
 npx webbl history usuario/mi-proyecto
@@ -136,7 +147,7 @@ Eliminar una versión específica del historial:
 npx webbl release delete usuario/mi-proyecto v1.0.0
 ```
 
-#### 6. Eliminar un Cocoon o Repositorio
+#### 7. Eliminar un Cocoon o Morph
 Eliminar el despliegue web (`gh-pages`):
 ```bash
 npx webbl delete usuario/mi-proyecto
@@ -147,7 +158,12 @@ Eliminar el repositorio completo de GitHub permanentemente:
 npx webbl delete usuario/mi-proyecto --repo
 ```
 
-#### 7. Abrir en Navegador
+Eliminar una Serverless Morph:
+```bash
+npx webbl morph delete usuario/mi-morph
+```
+
+#### 8. Abrir en Navegador
 ```bash
 npx webbl open
 ```
@@ -172,8 +188,8 @@ npx webbl console
 ```
 
 Abre automáticamente `http://localhost:3721` con un dashboard moderno:
-- **🐛 Cocoons Directory**: Visualización y gestión de todas tus aplicaciones web desplegadas.
-- **🦋 Morphs Directory**: Creación, listado y ejecución en tiempo real de funciones Serverless (**Async**, **Build** y **Hatch** Morphs).
+- **🐛 Cocoons Directory**: Visualización, renombramiento y gestión de todas tus aplicaciones web desplegadas.
+- **🦋 Morphs Directory**: Creación, renombramiento, listado y ejecución en tiempo real de funciones Serverless (**Async**, **Build** y **Hatch** Morphs).
 - **Deploy & Redeploy**: Arrastra o selecciona archivos estáticos (`.html`, `.css`, `.js`, etc.) con pre-visualización y descarte de archivos.
 - **Version Tags Personalizadas**: Elige la etiqueta de versión (ej. `v1.0.0`, `v2-beta`) o deja que se autogenere.
 - **Historial e Indicador Activo Real (`Active`)**: Identifica con precisión la versión que está en vivo en ese instante comparando el commit SHA.
@@ -208,12 +224,12 @@ Al hacer un Rollback a una versión antigua (ejemplo `v1.0.0`), WEBBL crea una n
 
 ---
 
-## 💻 SDK para Node.js / TypeScript (`@terra/webbl`)
+## 💻 SDK para Node.js / TypeScript (`terra-webbl`)
 
 También puedes controlar WEBBL de forma programática en tus scripts o herramientas:
 
 ```typescript
-import { Webbl } from '@terra/webbl';
+import { Webbl } from 'terra-webbl';
 
 const webbl = new Webbl({
   githubToken: process.env.GITHUB_TOKEN!
@@ -224,6 +240,12 @@ const result = await webbl.deploy({
   repo: 'mi-usuario/mi-sitio',
   message: 'Deploy programático'
 });
+
+// Renombrar un Cocoon
+await webbl.renameCocoon('mi-usuario/mi-sitio', 'mi-nuevo-sitio');
+
+// Renombrar un Morph
+await webbl.renameMorph('mi-usuario/mi-morph', 'mi-nuevo-morph');
 
 // Rollback a una versión previa
 await webbl.rollback('mi-usuario/mi-sitio', 'v1.0.0');
