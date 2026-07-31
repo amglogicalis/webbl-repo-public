@@ -188,6 +188,9 @@ class WebblConsole {
         const btnConfirmRenameCocoon = document.getElementById('btn-confirm-rename-cocoon');
         if (btnConfirmRenameCocoon) btnConfirmRenameCocoon.addEventListener('click', () => this.executeRenameCocoon());
 
+        const btnConfirmEditDesc = document.getElementById('btn-confirm-edit-cocoon-desc');
+        if (btnConfirmEditDesc) btnConfirmEditDesc.addEventListener('click', () => this.executeEditCocoonDesc());
+
         const btnConfirmDeleteMorph = document.getElementById('btn-confirm-delete-morph');
         if (btnConfirmDeleteMorph) btnConfirmDeleteMorph.addEventListener('click', () => this.executeDeleteMorph());
 
@@ -409,8 +412,11 @@ class WebblConsole {
                         ${statusBadgeHTML}
                     </div>
                     
-                    <p class="text-small text-muted" style="margin-bottom: 16px; flex:1;">
-                        ${this.truncate(repo.description || 'No description provided.', 80)}
+                    <p class="text-small text-muted" style="margin-bottom: 16px; flex:1; display:flex; align-items:flex-start; gap:6px;">
+                        <span class="cocoon-desc-text">${this.truncate(repo.description || 'No description provided.', 80)}</span>
+                        <button class="btn-icon btn-edit-cocoon-desc text-muted hover-text-primary" data-repo="${repo.full_name}" data-desc="${(repo.description || '').replace(/"/g, '&quot;')}" title="Edit description" style="background:none; border:none; cursor:pointer; font-size:11px; flex-shrink:0; margin-top:1px;">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
                     </p>
                     
                     <div class="cocoon-meta">
@@ -486,6 +492,15 @@ class WebblConsole {
                     const fullRepo = e.currentTarget.dataset.repo;
                     const repoName = e.currentTarget.dataset.name;
                     this.openRenameCocoonModal(fullRepo, repoName);
+                });
+            });
+
+            // Re-attach edit description event listeners
+            document.querySelectorAll('.btn-edit-cocoon-desc').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const fullRepo = e.currentTarget.dataset.repo;
+                    const currentDesc = e.currentTarget.dataset.desc;
+                    this.openEditCocoonDescModal(fullRepo, currentDesc);
                 });
             });
 
@@ -665,10 +680,56 @@ class WebblConsole {
         if (label) label.textContent = oldName;
 
         const input = document.getElementById('rename-cocoon-new-name-input');
-        if (input) input.value = oldName;
+        if (input) { input.value = oldName; setTimeout(() => input.focus(), 80); }
 
         const modal = document.getElementById('modal-rename-cocoon');
         if (modal) modal.classList.remove('hidden');
+    }
+
+    openEditCocoonDescModal(fullRepoName, currentDesc) {
+        this.editDescFullRepo = fullRepoName;
+
+        const label = document.getElementById('edit-cocoon-desc-repo-name');
+        if (label) label.textContent = fullRepoName.split('/')[1];
+
+        const input = document.getElementById('edit-cocoon-desc-input');
+        if (input) { input.value = currentDesc || ''; setTimeout(() => input.focus(), 80); }
+
+        const modal = document.getElementById('modal-edit-cocoon-desc');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    async executeEditCocoonDesc() {
+        const input = document.getElementById('edit-cocoon-desc-input');
+        const newDesc = input ? input.value.trim() : '';
+        const [owner, repo] = this.editDescFullRepo.split('/');
+        const btnSave = document.getElementById('btn-confirm-edit-cocoon-desc');
+
+        try {
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            btnSave.disabled = true;
+
+            const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: newDesc })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.message || 'Failed to update description');
+            }
+
+            this.closeAllModals();
+            this.showToast('Description Updated', `Description for '${repo}' saved.`, 'success');
+            this.loadCocoons();
+
+        } catch(e) {
+            this.showToast('Update Failed', e.message, 'error');
+        } finally {
+            btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Description';
+            btnSave.disabled = false;
+        }
     }
 
     async executeRenameCocoon() {
@@ -1294,6 +1355,11 @@ class WebblConsole {
         if (modalRenameMorph) modalRenameMorph.classList.add('hidden');
         const modalDeleteMorph = document.getElementById('modal-delete-morph');
         if (modalDeleteMorph) modalDeleteMorph.classList.add('hidden');
+        // FIX: include rename-cocoon modal so it properly closes after rename
+        const modalRenameCocoon = document.getElementById('modal-rename-cocoon');
+        if (modalRenameCocoon) modalRenameCocoon.classList.add('hidden');
+        const modalEditDesc = document.getElementById('modal-edit-cocoon-desc');
+        if (modalEditDesc) modalEditDesc.classList.add('hidden');
 
         // Reset deploy form visibility & selected files
         this.selectedDeployFiles = [];

@@ -56,11 +56,6 @@
         <main class="main-content">
             <!-- Top Bar -->
             <header class="topbar">
-                <div class="search-bar">
-                    <i class="fa-solid fa-search"></i>
-                    <input type="text" placeholder="Search Cocoons (Ctrl+K)..." id="search-input">
-                </div>
-                
                 <div class="auth-section">
                     <div class="token-input-group" id="token-group">
                         <i class="fa-brands fa-github"></i>
@@ -337,6 +332,28 @@
                 <button class="btn btn-secondary btn-cancel">Cancel</button>
                 <button class="btn btn-primary" id="btn-confirm-rename-cocoon">
                     <i class="fa-solid fa-floppy-disk"></i> Save Name
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Cocoon Description Modal -->
+    <div class="modal-backdrop hidden" id="modal-edit-cocoon-desc">
+        <div class="modal glass modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-align-left text-primary"></i> Edit Description</h3>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted text-small mb-3">Update the description for <strong id="edit-cocoon-desc-repo-name" class="text-primary"></strong>:</p>
+                <div class="form-group">
+                    <textarea id="edit-cocoon-desc-input" class="input-field" rows="3" placeholder="Brief description of this cocoon..." style="resize:vertical; font-family:inherit;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-primary" id="btn-confirm-edit-cocoon-desc">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Description
                 </button>
             </div>
         </div>

@@ -252,7 +252,7 @@ a:hover { color: var(--primary); }
 /* --- Top Bar --- */
 .topbar {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     padding: 20px 40px;
     border-bottom: 1px solid var(--border);
@@ -261,38 +261,6 @@ a:hover { color: var(--primary); }
     position: sticky;
     top: 0;
     z-index: 20;
-}
-
-.search-bar {
-    position: relative;
-    width: 300px;
-}
-
-.search-bar i {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    font-size: 0.9rem;
-}
-
-.search-bar input {
-    width: 100%;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    padding: 10px 16px 10px 38px;
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    font-family: inherit;
-    transition: var(--transition);
-}
-
-.search-bar input:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: rgba(250, 204, 21, 0.06);
-    box-shadow: 0 0 12px var(--primary-glow);
 }
 
 /* Global Styled Input Fields */
