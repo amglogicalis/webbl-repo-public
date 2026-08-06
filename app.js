@@ -2207,4 +2207,5 @@ jobs:
 
 // Initialize application
 const app = new WebblConsole();
+window.app = app;
 
