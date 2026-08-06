@@ -1519,12 +1519,18 @@ class WebblConsole {
             card.innerHTML = `
                 <div class="cocoon-card-header">
                     <div>
-                        <h3 class="cocoon-title">
+                        <h3 class="cocoon-title" style="display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-wand-magic-sparkles text-primary"></i> ${repo.name}
+                            <button class="btn-icon text-muted hover-text-primary" onclick="app.openEditMorphModal('${repo.full_name}')" title="Edit Morph (Name, Type, Description, TTL & Code)" style="background:none; border:none; cursor:pointer; font-size:12px; padding:2px;">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
                         </h3>
                         <p class="text-muted text-small">${this.truncate(repo.description || 'WEBBL Serverless Function', 45)}</p>
                     </div>
-                    <span class="badge ${badgeClass}">${categoryLabel}</span>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                        <span class="badge ${badgeClass}">${categoryLabel}</span>
+                        ${category === 'hatch' ? '<span class="badge badge-accent" style="font-size:10px;"><i class="fa-solid fa-stopwatch"></i> Idle TTL Sleep</span>' : ''}
+                    </div>
                 </div>
 
                 <div class="cocoon-meta mt-3">
@@ -1542,11 +1548,8 @@ class WebblConsole {
                     <button class="btn btn-primary btn-sm flex-1" onclick="app.openRunMorphModal('${repo.full_name}')">
                         <i class="fa-solid fa-play"></i> Run Morph
                     </button>
-                    <button class="btn btn-secondary btn-sm" onclick="app.openEditMorphModal('${repo.full_name}')" title="Edit Morph Settings & Code">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
-                    <button class="btn btn-secondary btn-sm" onclick="app.openRenameMorphModal('${repo.full_name}', '${repo.name}')" title="Rename Morph Repository">
-                        <i class="fa-solid fa-pen"></i>
+                    <button class="btn btn-secondary btn-sm" onclick="app.openEditMorphModal('${repo.full_name}')" title="Edit Morph Settings (Name, Type, Description, Idle TTL & Code)">
+                        <i class="fa-solid fa-pen"></i> Edit Morph
                     </button>
                     <a href="${repo.html_url}" target="_blank" class="btn btn-secondary btn-sm" title="View GitHub Repository">
                         <i class="fa-brands fa-github"></i>
