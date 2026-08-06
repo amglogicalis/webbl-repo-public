@@ -179,6 +179,9 @@ class WebblConsole {
         const btnCreateMorph = document.getElementById('btn-execute-create-morph');
         if (btnCreateMorph) btnCreateMorph.addEventListener('click', () => this.executeCreateMorph());
 
+        const btnEditMorph = document.getElementById('btn-execute-edit-morph');
+        if (btnEditMorph) btnEditMorph.addEventListener('click', () => this.executeEditMorph());
+
         const btnRunMorph = document.getElementById('btn-execute-run-morph');
         if (btnRunMorph) btnRunMorph.addEventListener('click', () => this.executeRunMorph());
 
@@ -1512,6 +1515,9 @@ class WebblConsole {
                     <button class="btn btn-primary btn-sm flex-1" onclick="app.openRunMorphModal('${repo.full_name}')">
                         <i class="fa-solid fa-play"></i> Run Morph
                     </button>
+                    <button class="btn btn-secondary btn-sm" onclick="app.openEditMorphModal('${repo.full_name}')" title="Edit Morph Settings & Code">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
                     <button class="btn btn-secondary btn-sm" onclick="app.openRenameMorphModal('${repo.full_name}', '${repo.name}')" title="Rename Morph Repository">
                         <i class="fa-solid fa-pen"></i>
                     </button>
@@ -1537,6 +1543,8 @@ class WebblConsole {
         document.getElementById('new-morph-name').value = '';
         document.getElementById('new-morph-desc').value = '';
         document.getElementById('new-morph-category').value = 'async';
+        const ttlInput = document.getElementById('new-morph-ttl');
+        if (ttlInput) ttlInput.value = '10';
         
         // Reset code editor and file input state (no cache)
         const codeEditor = document.getElementById('new-morph-code-editor');
@@ -1556,6 +1564,7 @@ class WebblConsole {
         const nameInput = document.getElementById('new-morph-name');
         const catInput = document.getElementById('new-morph-category');
         const descInput = document.getElementById('new-morph-desc');
+        const ttlInput = document.getElementById('new-morph-ttl');
         const btnExecute = document.getElementById('btn-execute-create-morph');
         const progress = document.getElementById('morph-create-progress');
         const progressText = document.getElementById('morph-create-progress-text');
@@ -1563,6 +1572,7 @@ class WebblConsole {
         const name = nameInput ? nameInput.value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-') : '';
         const category = catInput ? catInput.value : 'async';
         const description = descInput ? descInput.value.trim() : '';
+        const idleTimeoutMin = ttlInput ? Math.min(Math.max(parseInt(ttlInput.value, 10) || 10, 1), 360) : 10;
 
         if (!name) {
             this.showToast('Error', 'Please enter a valid Morph name.', 'error');
@@ -1601,7 +1611,7 @@ class WebblConsole {
             });
 
             // 3. Commit index.js handler (user code or default)
-            progressText.textContent = 'Writing index.js handler and GitHub Workflow...';
+            progressText.textContent = 'Writing index.js handler, manifest and GitHub Workflow...';
             const codeEditor = document.getElementById('new-morph-code-editor');
             const customCode = (codeEditor && codeEditor.value.trim()) ? codeEditor.value.trim() : `// WEBBL Morph Serverless Function (${category.toUpperCase()})
 module.exports = async function handler(payload) {
@@ -1623,7 +1633,25 @@ module.exports = async function handler(payload) {
                 })
             });
 
-            // 4. Commit GitHub Action workflow
+            // 4. Commit .webbl-morph.json manifest
+            const manifest = {
+                name,
+                category,
+                description,
+                idleTimeoutMin,
+                createdAt: new Date().toISOString()
+            };
+
+            await fetch(`https://api.github.com/repos/${fullRepo}/contents/.webbl-morph.json`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: 'feat: initialize morph manifest',
+                    content: btoa(unescape(encodeURIComponent(JSON.stringify(manifest, null, 2))))
+                })
+            });
+
+            // 5. Commit GitHub Action workflow with IDLE_TIMEOUT_MIN
             const workflowYml = `name: WEBBL Morph Execution
 on:
   repository_dispatch:
@@ -1638,6 +1666,7 @@ on:
 jobs:
   run-morph:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
@@ -1661,6 +1690,7 @@ jobs:
           '
         env:
           PAYLOAD: \${{ github.event.client_payload.payload || github.event.inputs.payload || '{}' }}
+          IDLE_TIMEOUT_MIN: '${idleTimeoutMin}'
 `;
 
             await fetch(`https://api.github.com/repos/${fullRepo}/contents/.github/workflows/morph.yml`, {
@@ -1683,6 +1713,275 @@ jobs:
         } finally {
             btnExecute.disabled = false;
             btnExecute.innerHTML = '<i class="fa-solid fa-plus"></i> Create Morph Repository';
+            progress.classList.add('hidden');
+        }
+    }
+
+    async openEditMorphModal(fullRepo) {
+        if (!this.token) {
+            this.showToast('Error', 'Please connect your GitHub Token first.', 'error');
+            return;
+        }
+
+        this.editMorphTargetRepo = fullRepo;
+        document.getElementById('edit-morph-target-repo').textContent = fullRepo;
+
+        const loader = document.getElementById('edit-morph-loader');
+        const form = document.getElementById('edit-morph-form');
+        const modal = document.getElementById('modal-edit-morph');
+
+        loader.classList.remove('hidden');
+        form.classList.add('hidden');
+        modal.classList.remove('hidden');
+
+        try {
+            // 1. Fetch repo details
+            const repoRes = await fetch(`https://api.github.com/repos/${fullRepo}`, {
+                headers: { 'Authorization': `token ${this.token}` }
+            });
+            if (!repoRes.ok) throw new Error('Failed to fetch Morph details.');
+            const repoData = await repoRes.json();
+
+            // Detect category from topics
+            let category = 'async';
+            if (repoData.topics?.includes('morph-build')) category = 'build';
+            if (repoData.topics?.includes('morph-hatch')) category = 'hatch';
+
+            // 2. Fetch index.js code
+            let code = '';
+            try {
+                const codeRes = await fetch(`https://api.github.com/repos/${fullRepo}/contents/index.js`, {
+                    headers: { 'Authorization': `token ${this.token}` }
+                });
+                if (codeRes.ok) {
+                    const codeData = await codeRes.json();
+                    if (codeData.content) {
+                        code = decodeURIComponent(escape(atob(codeData.content.replace(/\n/g, ''))));
+                    }
+                }
+            } catch(e) {}
+
+            // 3. Fetch manifest for idleTimeoutMin
+            let idleTimeoutMin = 10;
+            try {
+                const manifestRes = await fetch(`https://api.github.com/repos/${fullRepo}/contents/.webbl-morph.json`, {
+                    headers: { 'Authorization': `token ${this.token}` }
+                });
+                if (manifestRes.ok) {
+                    const manifestData = await manifestRes.json();
+                    if (manifestData.content) {
+                        const m = JSON.parse(decodeURIComponent(escape(atob(manifestData.content.replace(/\n/g, '')))));
+                        if (m.idleTimeoutMin) idleTimeoutMin = m.idleTimeoutMin;
+                    }
+                }
+            } catch(e) {}
+
+            // Pre-fill modal form
+            document.getElementById('edit-morph-name').value = repoData.name;
+            document.getElementById('edit-morph-category').value = category;
+            document.getElementById('edit-morph-desc').value = repoData.description || '';
+            document.getElementById('edit-morph-ttl').value = idleTimeoutMin;
+            document.getElementById('edit-morph-code-editor').value = code;
+
+            loader.classList.add('hidden');
+            form.classList.remove('hidden');
+
+        } catch (err) {
+            this.showToast('Error Loading Morph', err.message, 'error');
+            modal.classList.add('hidden');
+        }
+    }
+
+    async executeEditMorph() {
+        const fullRepo = this.editMorphTargetRepo;
+        if (!fullRepo) return;
+
+        const [owner, oldRepoName] = fullRepo.split('/');
+        const newNameInput = document.getElementById('edit-morph-name');
+        const catInput = document.getElementById('edit-morph-category');
+        const descInput = document.getElementById('edit-morph-desc');
+        const ttlInput = document.getElementById('edit-morph-ttl');
+        const codeInput = document.getElementById('edit-morph-code-editor');
+        const btnExecute = document.getElementById('btn-execute-edit-morph');
+        const progress = document.getElementById('morph-edit-progress');
+        const progressText = document.getElementById('morph-edit-progress-text');
+
+        const newName = newNameInput ? newNameInput.value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-') : oldRepoName;
+        const category = catInput ? catInput.value : 'async';
+        const description = descInput ? descInput.value.trim() : '';
+        const idleTimeoutMin = ttlInput ? Math.min(Math.max(parseInt(ttlInput.value, 10) || 10, 1), 360) : 10;
+        const code = codeInput ? codeInput.value : '';
+
+        let currentRepoName = oldRepoName;
+
+        try {
+            btnExecute.disabled = true;
+            btnExecute.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Morph...';
+            progress.classList.remove('hidden');
+
+            // 1. Rename repo if name changed
+            if (newName && newName !== oldRepoName) {
+                progressText.textContent = `Renaming repository to ${newName}...`;
+                const renameRes = await fetch(`https://api.github.com/repos/${owner}/${oldRepoName}`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName })
+                });
+                if (!renameRes.ok) throw new Error('Failed to rename Morph repository.');
+                currentRepoName = newName;
+            }
+
+            const currentFullRepo = `${owner}/${currentRepoName}`;
+
+            // 2. Update description & topics
+            progressText.textContent = 'Updating description and topics...';
+            await fetch(`https://api.github.com/repos/${currentFullRepo}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description })
+            });
+
+            await fetch(`https://api.github.com/repos/${currentFullRepo}/topics`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${this.token}`, 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify({ names: ['webbl-morph', `morph-${category}`] })
+            });
+
+            // 3. Update index.js
+            progressText.textContent = 'Updating index.js script handler...';
+            let codeSha = undefined;
+            try {
+                const existingCode = await fetch(`https://api.github.com/repos/${currentFullRepo}/contents/index.js`, {
+                    headers: { 'Authorization': `token ${this.token}` }
+                });
+                if (existingCode.ok) {
+                    const cData = await existingCode.json();
+                    codeSha = cData.sha;
+                }
+            } catch(e) {}
+
+            const codeBody = {
+                message: 'feat: update morph index.js code',
+                content: btoa(unescape(encodeURIComponent(code)))
+            };
+            if (codeSha) codeBody.sha = codeSha;
+
+            await fetch(`https://api.github.com/repos/${currentFullRepo}/contents/index.js`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(codeBody)
+            });
+
+            // 4. Update .webbl-morph.json manifest
+            progressText.textContent = 'Updating .webbl-morph.json manifest...';
+            let manifestSha = undefined;
+            try {
+                const existingM = await fetch(`https://api.github.com/repos/${currentFullRepo}/contents/.webbl-morph.json`, {
+                    headers: { 'Authorization': `token ${this.token}` }
+                });
+                if (existingM.ok) {
+                    const mData = await existingM.json();
+                    manifestSha = mData.sha;
+                }
+            } catch(e) {}
+
+            const updatedManifest = {
+                name: currentRepoName,
+                category,
+                description,
+                idleTimeoutMin,
+                updatedAt: new Date().toISOString()
+            };
+
+            const manifestBody = {
+                message: 'feat: update morph manifest',
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(updatedManifest, null, 2))))
+            };
+            if (manifestSha) manifestBody.sha = manifestSha;
+
+            await fetch(`https://api.github.com/repos/${currentFullRepo}/contents/.webbl-morph.json`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(manifestBody)
+            });
+
+            // 5. Update GitHub Action workflow YAML with IDLE_TIMEOUT_MIN
+            progressText.textContent = 'Updating workflow idle timeout TTL...';
+            let workflowSha = undefined;
+            try {
+                const existingW = await fetch(`https://api.github.com/repos/${currentFullRepo}/contents/.github/workflows/morph.yml`, {
+                    headers: { 'Authorization': `token ${this.token}` }
+                });
+                if (existingW.ok) {
+                    const wData = await existingW.json();
+                    workflowSha = wData.sha;
+                }
+            } catch(e) {}
+
+            const workflowYml = `name: WEBBL Morph Execution
+on:
+  repository_dispatch:
+    types: [morph-run]
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: 'JSON Payload'
+        required: false
+        default: '{}'
+
+jobs:
+  run-morph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Morph Handler
+        run: |
+          node -e '
+            const handler = require("./index.js");
+            const payload = JSON.parse(process.env.PAYLOAD || "{}");
+            Promise.resolve(handler(payload)).then(res => {
+              console.log("::WEBBL_RESULT_START::");
+              console.log(JSON.stringify(res));
+              console.log("::WEBBL_RESULT_END::");
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
+          '
+        env:
+          PAYLOAD: \${{ github.event.client_payload.payload || github.event.inputs.payload || '{}' }}
+          IDLE_TIMEOUT_MIN: '${idleTimeoutMin}'
+`;
+
+            const workflowBody = {
+                message: 'ci: update morph idle timeout TTL',
+                content: btoa(unescape(encodeURIComponent(workflowYml)))
+            };
+            if (workflowSha) workflowBody.sha = workflowSha;
+
+            await fetch(`https://api.github.com/repos/${currentFullRepo}/contents/.github/workflows/morph.yml`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(workflowBody)
+            });
+
+            this.closeAllModals();
+            this.showToast('Morph Updated', `Morph '${currentFullRepo}' updated successfully!`, 'success');
+
+            await new Promise(r => setTimeout(r, 1000));
+            this.loadMorphs();
+
+        } catch (err) {
+            this.showToast('Morph Edit Failed', err.message, 'error');
+        } finally {
+            btnExecute.disabled = false;
+            btnExecute.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Morph Changes';
             progress.classList.add('hidden');
         }
     }

@@ -434,6 +434,14 @@
                     <input type="text" id="new-morph-desc" class="input-field" placeholder="Brief description of this function">
                 </div>
 
+                <div class="form-group mb-3" id="group-new-morph-ttl">
+                    <label for="new-morph-ttl">⏱ Idle TTL Timeout (Auto-sleep when idle)</label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="number" id="new-morph-ttl" class="input-field" value="10" min="1" max="360" style="width:120px;">
+                        <span class="text-muted text-small">Minutes (1 min to 360 min / 6 hours max)</span>
+                    </div>
+                </div>
+
                 <div class="form-group mb-3">
                     <label>Function Script (index.js)</label>
                     <div class="flex gap-2 mb-2">
@@ -463,6 +471,71 @@ module.exports = async function handler(payload) {
             </div>
         </div>
     </div>
+
+    <!-- Edit Morph Modal -->
+    <div class="modal-backdrop hidden" id="modal-edit-morph">
+        <div class="modal glass modal-md">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-pen-to-square text-primary"></i> Edit WEBBL Morph</h3>
+                    <p class="text-muted text-small" id="edit-morph-target-repo">owner/morph-name</p>
+                </div>
+                <button class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="edit-morph-loader" class="loader-container hidden">
+                    <div class="spinner"></div>
+                    <p>Fetching Morph code & manifest from GitHub...</p>
+                </div>
+
+                <div id="edit-morph-form">
+                    <div class="form-group mb-3">
+                        <label for="edit-morph-name">Morph Name (GitHub Repo Name)</label>
+                        <input type="text" id="edit-morph-name" class="input-field" placeholder="e.g. form-handler">
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="edit-morph-category">Morph Type</label>
+                        <select id="edit-morph-category" class="input-field">
+                            <option value="async">⚡ Async Morph (Form handling, webhooks ~30s)</option>
+                            <option value="build">🏗️ Build Morph (Pre-build data injection 0ms)</option>
+                            <option value="hatch">🐣 Hatch Morph (Live Node.js worker runner)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="edit-morph-desc">Description</label>
+                        <input type="text" id="edit-morph-desc" class="input-field" placeholder="Brief description of this function">
+                    </div>
+
+                    <div class="form-group mb-3" id="group-edit-morph-ttl">
+                        <label for="edit-morph-ttl">⏱ Idle TTL Timeout (Auto-sleep when idle)</label>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <input type="number" id="edit-morph-ttl" class="input-field" value="10" min="1" max="360" style="width:120px;">
+                            <span class="text-muted text-small">Minutes (1 min to 360 min / 6 hours max)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="edit-morph-code-editor">Handler Script (index.js)</label>
+                        <textarea id="edit-morph-code-editor" class="input-field" rows="8" style="font-family: monospace; font-size: 12px; color: #10b981;" placeholder="// Handler script..."></textarea>
+                    </div>
+                </div>
+
+                <div id="morph-edit-progress" class="loader-container hidden mt-4">
+                    <div class="spinner"></div>
+                    <p id="morph-edit-progress-text">Saving Morph changes to GitHub...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-primary" id="btn-execute-edit-morph">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Morph Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Rename Morph Modal -->
     <div class="modal-backdrop hidden" id="modal-rename-morph">
