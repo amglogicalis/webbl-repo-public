@@ -1181,6 +1181,33 @@ class WebblConsole {
                 }
             }
 
+            // Ensure .nojekyll is uploaded to gh-pages branch to bypass Jekyll compiler errors
+            const hasNoJekyll = files.some(f => f.name === '.nojekyll' || f.name.endsWith('/.nojekyll'));
+            if (!hasNoJekyll) {
+                progressText.textContent = 'Uploading .nojekyll to disable Jekyll...';
+                try {
+                    let sha = undefined;
+                    const getRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/.nojekyll?ref=gh-pages`, {
+                        headers: { 'Authorization': `token ${this.token}` }
+                    });
+                    if (getRes.ok) {
+                        const fileData = await getRes.json();
+                        sha = fileData.sha;
+                    }
+                    const body = {
+                        message: '🛡️ Disable Jekyll for WEBBL',
+                        content: btoa('# Disable Jekyll for WEBBL'),
+                        branch: 'gh-pages'
+                    };
+                    if (sha) body.sha = sha;
+                    await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/.nojekyll`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                } catch(e) { /* ignore nojekyll upload error */ }
+            }
+
             // 2. Tag repo with webbl-cocoon topic
             if (stepTitle) stepTitle.textContent = '3. Tagging Repository & Enabling Pages...';
             try {
