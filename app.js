@@ -389,15 +389,10 @@ class WebblConsole {
                 this.cocoonsListContainer.innerHTML = '';
             }
 
-            for (const repo of this.cocoons) {
-                totalSize += repo.size;
-                const pushDate = new Date(repo.pushed_at);
-                if (!latestPush || pushDate > latestPush) latestPush = pushDate;
-
-                // Try to get Pages URL and Build Status
+            // Parallelize fetching GitHub Pages details for all Cocoons simultaneously
+            const cocoonDetails = await Promise.all(this.cocoons.map(async (repo) => {
                 let pagesUrl = `https://${this.user.login}.github.io/${repo.name}`;
                 let isBuilding = false;
-                let pagesStatus = 'built';
 
                 try {
                     const pageRes = await fetch(`https://api.github.com/repos/${repo.full_name}/pages`, {
@@ -406,23 +401,33 @@ class WebblConsole {
                     if (pageRes.ok) {
                         const pageData = await pageRes.json();
                         pagesUrl = pageData.html_url || pagesUrl;
-                        pagesStatus = pageData.status || 'built';
+                        const pagesStatus = pageData.status || 'built';
                         if (pagesStatus === 'building' || pagesStatus === 'queued') {
                             isBuilding = true;
                         }
                     }
 
-                    // Check latest build status
-                    const buildRes = await fetch(`https://api.github.com/repos/${repo.full_name}/pages/builds/latest`, {
-                        headers: { 'Authorization': `token ${this.token}` }
-                    });
-                    if (buildRes.ok) {
-                        const buildData = await buildRes.json();
-                        if (buildData.status === 'building' || buildData.status === 'queued') {
-                            isBuilding = true;
+                    // Only check build status if page indicates building/queued or page endpoint returned non-200
+                    if (!pageRes.ok || isBuilding) {
+                        const buildRes = await fetch(`https://api.github.com/repos/${repo.full_name}/pages/builds/latest`, {
+                            headers: { 'Authorization': `token ${this.token}` }
+                        });
+                        if (buildRes.ok) {
+                            const buildData = await buildRes.json();
+                            if (buildData.status === 'building' || buildData.status === 'queued') {
+                                isBuilding = true;
+                            }
                         }
                     }
                 } catch(e) { /* ignore */ }
+
+                return { repo, pagesUrl, isBuilding };
+            }));
+
+            for (const { repo, pagesUrl, isBuilding } of cocoonDetails) {
+                totalSize += repo.size;
+                const pushDate = new Date(repo.pushed_at);
+                if (!latestPush || pushDate > latestPush) latestPush = pushDate;
 
                 const statusBadgeHTML = isBuilding 
                     ? `<div class="status-indicator"><div class="status-dot building"></div> <span class="text-primary"><i class="fa-solid fa-spinner fa-spin text-small"></i> Building...</span></div>`
