@@ -158,7 +158,33 @@ Eliminar el repositorio completo de GitHub permanentemente:
 npx webbl delete usuario/mi-proyecto --repo
 ```
 
-Eliminar una Serverless Morph:
+#### 7. Crear y Gestionar Serverless Morphs
+Crear una nueva Serverless Morph (opcionalmente especificando tipo, tiempo de inactividad Idle TTL y archivo de script):
+```bash
+npx webbl morph create mi-morph hatch --ttl 45 --desc "Worker de pagos en tiempo real" --code ./handler.js
+```
+
+Editar una Serverless Morph existente (renombrar repositorio, cambiar categoría, ajustar Idle TTL, descripción o código fuente `index.js`):
+```bash
+npx webbl morph edit usuario/mi-morph --name v2-mi-morph --type async --desc "Handler asíncrono v2" --code ./new_handler.js
+```
+
+Consultar detalles y código de un Morph:
+```bash
+npx webbl morph get usuario/mi-morph
+```
+
+Listar todas las Serverless Morphs:
+```bash
+npx webbl morph list
+```
+
+Ejecutar un Morph asíncrono enviando un JSON payload:
+```bash
+npx webbl morph run usuario/mi-morph '{"event":"user_signup","email":"user@test.com"}'
+```
+
+Eliminar una Serverless Morph permanentemente:
 ```bash
 npx webbl morph delete usuario/mi-morph
 ```
@@ -235,23 +261,40 @@ const webbl = new Webbl({
   githubToken: process.env.GITHUB_TOKEN!
 });
 
-// Desplegar un Cocoon
+// 1. Desplegar un Cocoon (Sitio Estático / SPA)
 const result = await webbl.deploy({
   repo: 'mi-usuario/mi-sitio',
   message: 'Deploy programático'
 });
 
-// Renombrar un Cocoon
-await webbl.renameCocoon('mi-usuario/mi-sitio', 'mi-nuevo-sitio');
+// 2. Crear una Serverless Hatch Morph con Idle TTL Timeout (45 min)
+const morph = await webbl.createMorph({
+  name: 'payment-worker',
+  category: 'hatch',
+  idleTimeoutMin: 45,
+  description: 'Live Node.js Stripe worker',
+  code: `module.exports = async function(payload) { return { status: 200, payload }; };`
+});
 
-// Renombrar un Morph
-await webbl.renameMorph('mi-usuario/mi-morph', 'mi-nuevo-morph');
+// 3. Obtener detalles, manifiesto y código fuente de un Morph
+const details = await webbl.getMorph('mi-usuario/payment-worker');
+console.log(`Morph Code:\n${details.code}`);
 
-// Rollback a una versión previa
+// 4. Editar un Morph (Renombrar repo, categoría, descripción, TTL y script index.js)
+await webbl.updateMorph({
+  repo: 'mi-usuario/payment-worker',
+  name: 'v2-payment-worker',
+  category: 'async',
+  description: 'Async handler v2',
+  idleTimeoutMin: 120,
+  code: `module.exports = async function(payload) { return { status: 200, mode: 'v2', payload }; };`
+});
+
+// 5. Rollback a una versión previa de un Cocoon
 await webbl.rollback('mi-usuario/mi-sitio', 'v1.0.0');
 
-// Renombrar una release
-await webbl.renameRelease('mi-usuario/mi-sitio', 'webbl-v1785370361934', 'v1.0.0');
+// 6. Renombrar un Cocoon
+await webbl.renameCocoon('mi-usuario/mi-sitio', 'mi-nuevo-sitio');
 
 console.log(`Sitio en vivo en: ${result.url}`);
 ```
