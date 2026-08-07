@@ -424,6 +424,9 @@ class WebblConsole {
                 return { repo, pagesUrl, isBuilding };
             }));
 
+            const frag1 = document.createDocumentFragment();
+            const frag2 = this.cocoonsListContainer ? document.createDocumentFragment() : null;
+
             for (const { repo, pagesUrl, isBuilding } of cocoonDetails) {
                 totalSize += repo.size;
                 const pushDate = new Date(repo.pushed_at);
@@ -484,14 +487,19 @@ class WebblConsole {
                 const card1 = document.createElement('div');
                 card1.className = 'cocoon-card glass';
                 card1.innerHTML = cardHTML;
-                this.cocoonsContainer.appendChild(card1);
+                frag1.appendChild(card1);
 
-                if (this.cocoonsListContainer) {
+                if (frag2) {
                     const card2 = document.createElement('div');
                     card2.className = 'cocoon-card glass';
                     card2.innerHTML = cardHTML;
-                    this.cocoonsListContainer.appendChild(card2);
+                    frag2.appendChild(card2);
                 }
+            }
+
+            this.cocoonsContainer.appendChild(frag1);
+            if (this.cocoonsListContainer && frag2) {
+                this.cocoonsListContainer.appendChild(frag2);
             }
 
             // Re-attach redeploy event listeners
