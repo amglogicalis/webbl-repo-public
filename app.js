@@ -218,6 +218,34 @@ class WebblConsole {
                 }
             });
         }
+
+        // Dynamic TTL Visibility based on category (Hatch Morph only)
+        const updateNewMorphTtlVisibility = () => {
+            const cat = document.getElementById('new-morph-category')?.value;
+            const group = document.getElementById('group-new-morph-ttl');
+            if (group) {
+                if (cat === 'hatch') group.classList.remove('hidden');
+                else group.classList.add('hidden');
+            }
+        };
+
+        const updateEditMorphTtlVisibility = () => {
+            const cat = document.getElementById('edit-morph-category')?.value;
+            const group = document.getElementById('group-edit-morph-ttl');
+            if (group) {
+                if (cat === 'hatch') group.classList.remove('hidden');
+                else group.classList.add('hidden');
+            }
+        };
+
+        const newMorphCatSelect = document.getElementById('new-morph-category');
+        if (newMorphCatSelect) newMorphCatSelect.addEventListener('change', updateNewMorphTtlVisibility);
+
+        const editMorphCatSelect = document.getElementById('edit-morph-category');
+        if (editMorphCatSelect) editMorphCatSelect.addEventListener('change', updateEditMorphTtlVisibility);
+        
+        this.updateNewMorphTtlVisibility = updateNewMorphTtlVisibility;
+        this.updateEditMorphTtlVisibility = updateEditMorphTtlVisibility;
     }
 
     switchView(viewId) {
@@ -1385,6 +1413,8 @@ class WebblConsole {
         if (modalRenameMorph) modalRenameMorph.classList.add('hidden');
         const modalDeleteMorph = document.getElementById('modal-delete-morph');
         if (modalDeleteMorph) modalDeleteMorph.classList.add('hidden');
+        const modalEditMorph = document.getElementById('modal-edit-morph');
+        if (modalEditMorph) modalEditMorph.classList.add('hidden');
         // FIX: include rename-cocoon modal so it properly closes after rename
         const modalRenameCocoon = document.getElementById('modal-rename-cocoon');
         if (modalRenameCocoon) modalRenameCocoon.classList.add('hidden');
@@ -1585,6 +1615,8 @@ class WebblConsole {
 
         const fileNameSpan = document.getElementById('morph-file-selected-name');
         if (fileNameSpan) fileNameSpan.textContent = 'No file selected';
+
+        if (this.updateNewMorphTtlVisibility) this.updateNewMorphTtlVisibility();
 
         const modal = document.getElementById('modal-new-morph');
         if (modal) modal.classList.remove('hidden');
@@ -1812,6 +1844,8 @@ jobs:
             document.getElementById('edit-morph-desc').value = repoData.description || '';
             document.getElementById('edit-morph-ttl').value = idleTimeoutMin;
             document.getElementById('edit-morph-code-editor').value = code;
+
+            if (this.updateEditMorphTtlVisibility) this.updateEditMorphTtlVisibility();
 
             loader.classList.add('hidden');
             form.classList.remove('hidden');
